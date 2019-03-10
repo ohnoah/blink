@@ -237,7 +237,7 @@ class Score:
             return -5
         if val==-1 | val==-1:
             return -1
-        else:
+        elif val==0:
             return 5
 
 
