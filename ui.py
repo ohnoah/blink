@@ -247,7 +247,6 @@ class Score:
             return self.change
 
     def flash(self, screen, bg):
-        print(self.flash_count)
         if (self.flash_count%4)<2:
             self.flash_count = self.flash_count - 1
         elif self.flash_count>0:
@@ -278,7 +277,7 @@ def main():
     screen = pygame.display.set_mode((1024,512), pygame.RESIZABLE)
     bg = Background("./copy.jpeg", 1024,512)
     clouds = []
-    ytargets = [0.2, 0.35, 0.5, 0.65, 0.8]
+    ytargets = [0.8,0.65,0.5,0.35,0.2]
     transitionstep = 0
     score_position_w = 0.1*bg.width
     score_position_h = 0.2*bg.height
