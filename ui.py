@@ -114,13 +114,13 @@ class BlinkDetector:
         if(len(self.EAR) > 3):
             self.prevEAR = self.EAR
         returnVal = 0
-        if(self.blinkR < 3):
+        if(self.blinkR < 6):
             returnVal = -2
-        elif(3 <= self.blinkR <= 6 ):
+        elif(6 <= self.blinkR <= 12 ):
             returnVal = -1
-        elif(7 < self.blinkR <= 11 ):
+        elif(12 < self.blinkR <= 18 ):
             returnVal = 0
-        elif(11 < self.blinkR <= 15 ):
+        elif(18 < self.blinkR <= 24 ):
             returnVal = 1
         else:
             returnVal = 2
@@ -146,12 +146,18 @@ class Background:
         self.height = h
         self.background = pygame.transform.scale(self.background, (w,h))
 
+class Exhaust:
+    def __init__(self, imageFilePath, width, height, xpos, ypos):
+        self.image = pygame.transform.scale(pygame.image.load(imageFilePath),(width,height))
+        self.x = xpos
+        self.y = ypos
+
 class Bar:
     def __init__(self, screen):
         #HARCODED
         #HARDCODED
         
-        self.HEAT_BAR_IMAGE = pygame.Surface((600, 20))
+        self.HEAT_BAR_IMAGE = pygame.Surface((0.8*(screen.get_width()), 20))
         self.color = pygame.Color(240, 240, 240)
         self.heat = 0.0
         for x in range(self.HEAT_BAR_IMAGE.get_width()):
@@ -159,14 +165,15 @@ class Bar:
                 self.HEAT_BAR_IMAGE.set_at((x, y), self.color)
         pygame.font.init()
         myfont = pygame.font.SysFont('Comic Sans MS', 30)
-        self.textsurface = myfont.render('0', False, (0, 0, 0))
+        self.textsurface = myfont.render('0', False, (240, 240, 240))
 
     def update(self, counter, screen, bg):
-
-        heat_rect = self.HEAT_BAR_IMAGE.get_rect(bottomleft=(50, 250))
+        heightbar = 0.95*bg.height
+        left_bar = 0.1*bg.width
+        heat_rect = self.HEAT_BAR_IMAGE.get_rect(bottomleft=(left_bar, heightbar - 20))
         # `heat` is the percentage of the surface's width and
         # is used to calculate the visible area of the image.
-        self.heat = self.heat + counter / 3  # 5% of the image are already visible.
+        self.heat = self.heat + counter / 30  # 5% of the image are already visible.
         screen.blit(
             self.HEAT_BAR_IMAGE,
             heat_rect,
@@ -175,19 +182,19 @@ class Bar:
             (0, 0, heat_rect.w / 100 * self.heat, heat_rect.h)
         )
         myfont = pygame.font.SysFont('Comic Sans MS', 30)
-        five_mins= myfont.render('5', False, (0, 0, 0))
-        ten_mins= myfont.render('10', False, (0, 0, 0))
-        fifteen_mins= myfont.render('15', False, (0, 0, 0))
-        twenty_mins= myfont.render('20', False, (0, 0, 0))
-        screen.blit(self.textsurface, (50, 270))
-        if self.heat>0.25:
-            screen.blit(five_mins, (heat_rect.w/100 * 0.25, 270))
-        if self.heat>0.5:
-            screen.blit(ten_mins, (heat_rect.w/100 * 0.50, 270))
-        if self.heat>0.75:
-            screen.blit(fifteen_mins, (heat_rect.w/100 * 0.75, 270))
-        if self.heat>1.0:
-            screen.blit(twenty_mins, (heat_rect.w/100, 270))
+        five_mins= myfont.render('5 mins', False, (240, 240, 240))
+        ten_mins= myfont.render('10 mins', False, (240, 240, 240))
+        fifteen_mins= myfont.render('15 mins', False, (240, 240, 240))
+        twenty_mins= myfont.render('20 mins', False, (240, 240, 240))
+        screen.blit(self.textsurface, (left_bar, heightbar))
+        if self.heat>25:
+            screen.blit(five_mins, (left_bar + heat_rect.w/100 * 25, heightbar))
+        if self.heat>50:
+            screen.blit(ten_mins, (left_bar + heat_rect.w/100 * 50, heightbar))
+        if self.heat>75:
+            screen.blit(fifteen_mins, (left_bar + heat_rect.w/100 * 75, heightbar))
+        if self.heat>100:
+            screen.blit(twenty_mins, (left_bar + heat_rect.w, heightbar))
         pygame.display.flip()
 
     def resize(self,w,h):
@@ -195,34 +202,73 @@ class Bar:
         self.height = h
         self.background = pygame.transform.scale(self.HEAT_BAR_IMAGE, (w,h))
 
+class Score:
+    def __init__(self, s_w, s_h):
+        pygame.font.init()
+        self.score = 0
+        self.s_w = s_w
+        self.s_h = s_h
+
+    def displayScore(self, screen):
+        myfont = pygame.font.SysFont('Score:' + str(self.score), 45)
+        score_surface = myfont.render('0', False, (240, 240, 240))
+        screen.blitz(score_surface, (self.s_w, self.s_h))
+
+    def updateScore(self, screen, val):
+        change = self.valtoScore(val)
+        self.score = self.score + change
+        myfont = pygame.font.SysFont(str(change), 45)
+        if change==-5:
+            score_surface = myfont.render(str(change), False, (255, 0, 0))
+        if change==-1:
+            score_surface = myfont.render(str(change), False, (240, 150, 150))
+        if change==5:
+            score_surface = myfont.render(str(change), False, (44, 200, 100))
+        screen.blitz(score_surface, (self.s_w, self.s_h))
+
+    def valtoScore(self, val):
+        if val==-2 | val==2:
+            return -5
+        if val==-1 | val==-1:
+            return -1
+        else:
+            return 5
+
+score_position_w = 700
+score_position_h = 200
 charwidth = 100
 charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-    vs = VideoStream(src=0).start()
-    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 10)
+    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 60)
     not_done = True
     pygame.init()
     character1 = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
     character = pygame.transform.rotate(character1, 1)
     screen = pygame.display.set_mode((1024,512), pygame.RESIZABLE)
     bg = Background("./copy.jpeg", 1024,512)
+    clouds = []
+    ytargets = [0.2, 0.35, 0.5, 0.65, 0.8]
+    transitionstep = 0
     bar = Bar(screen)
 
     try:
         counter = 1
         charY = bg.height/2
+        prevTimeElapsed = 0
         while not_done:
             blinkR = bd.processFrame()
             if((counter % 15) == 0):
-                charY = bg.height/2 + (bg.height/10)*blinkR
-                if(charY > bg.height - charheight/2):
-                    charY = bg.height - charheight/2
-                elif(charY < charheight/2):
-                    charY = charheight/2
-                    
                 counter = 0
+            # Update exhaust and ship position
+            if prevTimeElapsed > bd.timeElapsed:
+                clouds.append(Exhaust("exhaust.png", 30, 15, (bg.width-charwidth)/4 * 3, charY - charheight/2 + 15))
+                transitionstep = ((ytargets[blinkR + 2] * bg.height) - charY) / 100
+            charY += transitionstep
+            if (transitionstep < 0 and charY < ytargets[blinkR + 2] * bg.height) or (transitionstep > 0 and charY > ytargets[blinkR + 2] * bg.height):
+                transitionstep = 0
+            prevTimeElapsed = bd.timeElapsed
             pygame.display.update()
             arr = pygame.event.get()
             #deals with closing and resizing
@@ -235,9 +281,11 @@ def main():
                     screen = pygame.display.set_mode((event.w,event.h), pygame.RESIZABLE)
                     bg.resize(event.w, event.h)
             bg.updateBackground(screen)
-
-            (x,y) = ((bg.width-charwidth)/2,charY - charheight/2)
+            (x,y) = ((bg.width-charwidth)/4 * 3,charY - charheight/2)
             screen.blit(character,(x,y))
+            for cloud in clouds:
+                cloud.x -= bg.width * 0.0001
+                screen.blit(cloud.image, (cloud.x, cloud.y))
             bar.update(counter, screen, bg)
             #done drawing so sleep
             counter += 1
@@ -249,5 +297,5 @@ def main():
     pygame.quit()
     time.sleep(3)
     os._exit(0)
-    
+
 main()
