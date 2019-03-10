@@ -208,23 +208,29 @@ class Score:
         self.score = 0
         self.s_w = s_w
         self.s_h = s_h
+        self.count = 0
+        self.change = 0
 
     def displayScore(self, screen):
-        myfont = pygame.font.SysFont('Score:' + str(self.score), 45)
-        score_surface = myfont.render('0', False, (240, 240, 240))
-        screen.blitz(score_surface, (self.s_w, self.s_h))
+        if self.count==0:
+            myfont = pygame.font.SysFont('Score:' + str(self.score), 45)
+            score_surface = myfont.render('Score: ' + str(self.score), False, (240, 240, 240))
+            screen.blit(score_surface, (self.s_w, self.s_h))
+        else:
+            myfont = pygame.font.SysFont(str(self.change), 45)
+            if self.change == -5:
+                score_surface = myfont.render(str(self.change), False, (255, 0, 0))
+            if self.change == -1:
+                score_surface = myfont.render(str(self.change), False, (240, 150, 150))
+            if self.change == 5:
+                score_surface = myfont.render("+" + str(self.change), False, (44, 200, 100))
+            screen.blit(score_surface, (self.s_w, self.s_h))
+            self.count = self.count - 1
 
     def updateScore(self, screen, val):
-        change = self.valtoScore(val)
-        self.score = self.score + change
-        myfont = pygame.font.SysFont(str(change), 45)
-        if change==-5:
-            score_surface = myfont.render(str(change), False, (255, 0, 0))
-        if change==-1:
-            score_surface = myfont.render(str(change), False, (240, 150, 150))
-        if change==5:
-            score_surface = myfont.render(str(change), False, (44, 200, 100))
-        screen.blitz(score_surface, (self.s_w, self.s_h))
+        self.change = self.valtoScore(val)
+        self.score = self.score + self.change
+        self.count = 5
 
     def valtoScore(self, val):
         if val==-2 | val==2:
@@ -234,14 +240,13 @@ class Score:
         else:
             return 5
 
-score_position_w = 700
-score_position_h = 200
+
 charwidth = 100
 charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 60)
+    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 5)
     not_done = True
     pygame.init()
     character1 = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
@@ -251,7 +256,10 @@ def main():
     clouds = []
     ytargets = [0.2, 0.35, 0.5, 0.65, 0.8]
     transitionstep = 0
+    score_position_w = 0.1*bg.width
+    score_position_h = 0.2*bg.height
     bar = Bar(screen)
+    score = Score(score_position_w, score_position_h)
 
     try:
         counter = 1
@@ -265,6 +273,7 @@ def main():
             if prevTimeElapsed > bd.timeElapsed:
                 clouds.append(Exhaust("exhaust.png", 30, 15, (bg.width-charwidth)/4 * 3, charY - charheight/2 + 15))
                 transitionstep = ((ytargets[blinkR + 2] * bg.height) - charY) / 100
+                score.updateScore(screen, blinkR)
             charY += transitionstep
             if (transitionstep < 0 and charY < ytargets[blinkR + 2] * bg.height) or (transitionstep > 0 and charY > ytargets[blinkR + 2] * bg.height):
                 transitionstep = 0
@@ -287,6 +296,7 @@ def main():
                 cloud.x -= bg.width * 0.0001
                 screen.blit(cloud.image, (cloud.x, cloud.y))
             bar.update(counter, screen, bg)
+            score.displayScore(screen)
             #done drawing so sleep
             counter += 1
             pygame.time.wait(33)
