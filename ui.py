@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import pywt
 from hmmlearn import hmm
+from scipy.spatial import distance as dist
 import pygame, time, sys, os
 from random import randint
 from imutils.video import VideoStream
@@ -16,7 +17,7 @@ import cv2
 
 class BlinkDetector:
     def __init__(self, shape_predictor_file, batch_interval):
-        self.vs = VideoStream(src=0).start()
+        self.fileStream = True
         self.EAR = []
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor(shape_predictor_file)
@@ -44,6 +45,7 @@ class BlinkDetector:
         return ear
 
     def blinkrate(self):
+        print(self.EAR)
         model = hmm.GaussianHMM(n_components=2)
         model.fit(np.array(self.EAR).reshape(-1,1))
         states = model.predict(np.array(self.EAR).reshape(-1,1))
@@ -51,17 +53,17 @@ class BlinkDetector:
         prevstate = 1
         for i in range(0,len(states)):
             if states[i] == 0 and prevstate == 1:
-                starts.append(i)
+                # starts.append(i)
                 count += 1
                 prevstate = 0
             elif states[i] == 1 and prevstate == 0:
                 prevstate = 1
-            elif states[i] == 1 and prevstate == 0:
-                ends.append(i)
+            # elif states[i] == 1 and prevstate == 0:
+            #     ends.append(i)
         self.EAR.clear()
         return count
 
-    def processFrame(self):
+    def processFrame(self, vs):
         if self.prevTime == -1:
             self.prevTime = time.time()
         elif self.timeElapsed < self.batchInterval:
@@ -123,7 +125,8 @@ charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 30)
+    vs = VideoStream(src=0).start()
+    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 5)
     not_done = True
     pygame.init()
     screen = pygame.display.set_mode((900,300), pygame.RESIZABLE)
@@ -135,10 +138,10 @@ def main():
         counter = 1
         charY = bg.height/2
         while not_done:
-            blinkR = bd.processFrame()
+            blinkR = bd.processFrame(vs)
             if((counter % 10) == 0):
-                print("updating y")
                 charY = bg.height/2 + (bg.height/2)*blinkR
+                print("update " + str(charY))
                 if((abs(charY - bg.height) < charheight/2)):
                     charY = bg.height - charheight/2
                 elif(charY < bg.height/2):
