@@ -123,7 +123,7 @@ charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-    bd = BlinkDetector("File_To_Shape_Detector")
+    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 30)
     not_done = True
     pygame.init()
     screen = pygame.display.set_mode((900,300), pygame.RESIZABLE)
