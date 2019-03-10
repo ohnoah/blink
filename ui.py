@@ -117,13 +117,13 @@ class BlinkDetector:
         if(len(self.EAR) > 3):
             self.prevEAR = self.EAR
         returnVal = 0
-        if(self.blinkR < 6):
+        if(self.blinkR < 2):
             returnVal = -2
-        elif(6 <= self.blinkR <= 12 ):
+        elif(2 <= self.blinkR <= 4 ):
             returnVal = -1
-        elif(12 < self.blinkR <= 18 ):
+        elif(4 < self.blinkR <= 6 ):
             returnVal = 0
-        elif(18 < self.blinkR <= 24 ):
+        elif(6 < self.blinkR <= 8 ):
             returnVal = 1
         else:
             returnVal = 2
@@ -272,8 +272,8 @@ charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-    gameState = "GAME"
-    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 30)
+    gameState = "START"
+    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 10)
     not_done = True
     pygame.init()
     character1 = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
@@ -287,17 +287,25 @@ def main():
     score_position_h = 0.2*bg.height
     bar = Bar(screen)
     score = Score(score_position_w, score_position_h)
-    pygame.font.init()
-
+    quotes = ["Myopia, is a very common eye condition that causes distant objects to appear blurred, while close objects can be seen clearly. It’s thought to affect up to 1 in 3 people in the UK and is becoming more common.", "We all love to spend time on our computers but if it stops you from going out in the sun, it may lead to short-sightedness.", "The American Academy of Ophthalmology doesn’t recommend special eyewear for computer use. Instead, taking regular breaks and making sure to blink has been shown to have positive effects.", "Many experience discomfort from dry eyes when using the computer for extended period of times. This is primarily due to a lack of blinking.", "Blinking regularly provides suction across the eye from the tear duct which keeps your eyes from getting dry.", "Ophthalmology is a branch of medicine that relates to eye disorders and conditions.", "After a long period in front of the computer, looking at objects further away in your room or in the distance activates your long sightedness and puts less strain on your eye.", "Many ophthalmologists fear the long term development of eye problems in the current generation growing up in the digital age. There has been evidence suggesting eye discomfort in front of computers is linked to increased incidence of short-sightedness."]
     try:
         counter = 1
         charY = bg.height/2
         prevTimeElapsed = 0
         while not_done:
             if gameState == "START":
-                myfont = pygame.font.SysFont("Arial", 45)
-                score_surface = myfont.render("Blink", True, (240, 240, 240))
-                screen.blit(score_surface, score_surface.get_rect())
+                pygame.display.update()
+                screen.fill(pygame.Color(255,255,255))
+                myfont = pygame.font.SysFont('Comic Sans MS', 65)
+                myfont2 = pygame.font.SysFont("Comic Sans MS", 45)
+                myfont3 = pygame.font.SysFont("Comic Sans MS", 20)
+                title = myfont.render("Do Blink", False, (0, 0, 0))
+                screen.blit(title, (bg.width/2 - title.get_rect().width/2, 0.2 * bg.height))
+                quote = myfont3.render(quotes[4], False, (0, 0, 0))
+                screen.blit(quote, (bg.width/2 - quote.get_rect().width/2, 0.4 * bg.height))
+                startbutton = myfont2.render("Start", False, (0, 0, 0))
+                pygame.draw.rect(screen, pygame.Color(0,255,255), pygame.Rect(((bg.width/2 - startbutton.get_rect().width/2, bg.height * 0.5), (startbutton.get_rect().width, startbutton.get_rect().height))))
+                screen.blit(startbutton, (bg.width/2 - startbutton.get_rect().width/2, 0.5 * bg.height))
                 for event in pygame.event.get():
                    if event.type == pygame.QUIT:
                         print("ITS MEANT TO CLOSE")
@@ -306,6 +314,11 @@ def main():
                    if event.type == pygame.VIDEORESIZE:
                         screen = pygame.display.set_mode((event.w,event.h), pygame.RESIZABLE)
                         bg.resize(event.w, event.h)
+                   if event.type == pygame.MOUSEBUTTONUP:
+                       myrect = pygame.Rect(((bg.width/2 - startbutton.get_rect().width/2, bg.height * 0.5), (startbutton.get_rect().width, startbutton.get_rect().height)))
+                       print(myrect.collidepoint(event.pos))
+                       if myrect.collidepoint(event.pos):
+                           gameState = "GAME"
             elif gameState == "GAME":
                 blinkR = bd.processFrame()
                 if((counter % 15) == 0):
@@ -334,7 +347,7 @@ def main():
                 (x,y) = ((bg.width-charwidth)/4 * 3,charY - charheight/2)
                 screen.blit(character,(x,y))
                 for cloud in clouds:
-                    cloud.x -= bg.width * 0.0001
+                    cloud.x -= bg.width * 0.001
                     screen.blit(cloud.image, (cloud.x, cloud.y))
                 bar.update(counter, screen, bg)
                 score.displayScore(screen)
@@ -347,7 +360,6 @@ def main():
         not_done = False
         print("HELLO")
     pygame.quit()
-    time.sleep(33)
     os._exit(0)
 
 main()
