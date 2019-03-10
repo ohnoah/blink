@@ -16,6 +16,8 @@ import dlib
 import cv2
 from scipy.spatial import distance as dist
 import math
+import pygameMenu
+from pygameMenu.locals import *
 
 class BlinkDetector:
     def __init__(self, shape_predictor_file, batch_interval):
@@ -270,6 +272,7 @@ charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
+    gameState = "GAME"
     bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 30)
     not_done = True
     pygame.init()
@@ -278,59 +281,73 @@ def main():
     screen = pygame.display.set_mode((1024,512), pygame.RESIZABLE)
     bg = Background("./copy.jpeg", 1024,512)
     clouds = []
-    ytargets = [0.2, 0.35, 0.5, 0.65, 0.8]
+    ytargets = [0.8, 0.65, 0.5, 0.35, 0.2]
     transitionstep = 0
     score_position_w = 0.1*bg.width
     score_position_h = 0.2*bg.height
     bar = Bar(screen)
     score = Score(score_position_w, score_position_h)
+    pygame.font.init()
 
     try:
         counter = 1
         charY = bg.height/2
         prevTimeElapsed = 0
         while not_done:
-            blinkR = bd.processFrame()
-            if((counter % 15) == 0):
-                counter = 0
-            # Update exhaust and ship position
-            if prevTimeElapsed > bd.timeElapsed:
-                clouds.append(Exhaust("exhaust.png", 30, 15, (bg.width-charwidth)/4 * 3, charY - charheight/2 + 15))
-                transitionstep = ((ytargets[blinkR + 2] * bg.height) - charY) / 100
-                score.updateScore(screen, blinkR)
-            charY += transitionstep
-            if (transitionstep < 0 and charY < ytargets[blinkR + 2] * bg.height) or (transitionstep > 0 and charY > ytargets[blinkR + 2] * bg.height):
-                transitionstep = 0
-            prevTimeElapsed = bd.timeElapsed
-            pygame.display.update()
-            arr = pygame.event.get()
-            #deals with closing and resizing
-            for event in arr:
-                if event.type == pygame.QUIT:
-                    print("ITS MEANT TO CLOSE")
-                    not_done = False
-                    break
-                if event.type == pygame.VIDEORESIZE:
-                    screen = pygame.display.set_mode((event.w,event.h), pygame.RESIZABLE)
-                    bg.resize(event.w, event.h)
-            bg.updateBackground(screen)
-            (x,y) = ((bg.width-charwidth)/4 * 3,charY - charheight/2)
-            screen.blit(character,(x,y))
-            for cloud in clouds:
-                cloud.x -= bg.width * 0.0001
-                screen.blit(cloud.image, (cloud.x, cloud.y))
-            bar.update(counter, screen, bg)
-            score.displayScore(screen)
-            score.flash(screen, bg)
-            #done drawing so sleep
-            counter += 1
-            pygame.time.wait(33)
+            if gameState == "START":
+                myfont = pygame.font.SysFont("Arial", 45)
+                score_surface = myfont.render("Blink", True, (240, 240, 240))
+                screen.blit(score_surface, score_surface.get_rect())
+                for event in pygame.event.get():
+                   if event.type == pygame.QUIT:
+                        print("ITS MEANT TO CLOSE")
+                        not_done = False
+                        break
+                   if event.type == pygame.VIDEORESIZE:
+                        screen = pygame.display.set_mode((event.w,event.h), pygame.RESIZABLE)
+                        bg.resize(event.w, event.h)
+            elif gameState == "GAME":
+                blinkR = bd.processFrame()
+                if((counter % 15) == 0):
+                    counter = 0
+                # Update exhaust and ship position
+                if prevTimeElapsed > bd.timeElapsed:
+                    clouds.append(Exhaust("exhaust.png", 30, 15, (bg.width-charwidth)/4 * 3, charY - charheight/2 + 15))
+                    transitionstep = ((ytargets[blinkR + 2] * bg.height) - charY) / 100
+                    score.updateScore(screen, blinkR)
+                charY += transitionstep
+                if (transitionstep < 0 and charY < ytargets[blinkR + 2] * bg.height) or (transitionstep > 0 and charY > ytargets[blinkR + 2] * bg.height):
+                    transitionstep = 0
+                prevTimeElapsed = bd.timeElapsed
+                pygame.display.update()
+                arr = pygame.event.get()
+                #deals with closing and resizing
+                for event in arr:
+                   if event.type == pygame.QUIT:
+                        print("ITS MEANT TO CLOSE")
+                        not_done = False
+                        break
+                   if event.type == pygame.VIDEORESIZE:
+                        screen = pygame.display.set_mode((event.w,event.h), pygame.RESIZABLE)
+                        bg.resize(event.w, event.h)
+                bg.updateBackground(screen)
+                (x,y) = ((bg.width-charwidth)/4 * 3,charY - charheight/2)
+                screen.blit(character,(x,y))
+                for cloud in clouds:
+                    cloud.x -= bg.width * 0.0001
+                    screen.blit(cloud.image, (cloud.x, cloud.y))
+                bar.update(counter, screen, bg)
+                score.displayScore(screen)
+                score.flash(screen, bg)
+                #done drawing so sleep
+                counter += 1
+                pygame.time.wait(33)
     except Exception as e: 
         print(e)
         not_done = False
-    print("HELLO")
+        print("HELLO")
     pygame.quit()
-    time.sleep(3)
+    time.sleep(33)
     os._exit(0)
 
 main()
