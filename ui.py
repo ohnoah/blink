@@ -56,6 +56,8 @@ class BlinkDetector:
         else:
             print("EMPTY EAR")
         data = np.array(self.EAR)
+        if data.size==0:
+            print("datasize")
         for i in range(0, data.size, math.ceil(data.size*0.05)):
             lim = math.ceil(data.size*0.05)
             if lim + i > data.size:
@@ -149,25 +151,23 @@ class Background:
         self.background = pygame.transform.scale(self.background, (w,h))
 
 class Bar:
-    def __init__(self):
-        self.HEAT_BAR_IMAGE = pygame.Surface((200, 20))
-        self.color = pygame.Color(0, 255, 0)
+    def __init__(self, screen):
+        self.HEAT_BAR_IMAGE = pygame.Surface((600, 20))
+        self.color = pygame.Color(240, 240, 240)
         self.heat = 0.0
         for x in range(self.HEAT_BAR_IMAGE.get_width()):
             for y in range(self.HEAT_BAR_IMAGE.get_height()):
                 self.HEAT_BAR_IMAGE.set_at((x, y), self.color)
-            if self.color.r < 254:
-                self.color.r += 2
-            if self.color.g > 1:
-                self.color.g -= 2
+        pygame.font.init()
+        myfont = pygame.font.SysFont('Comic Sans MS', 30)
+        self.textsurface = myfont.render('0', False, (0, 0, 0))
 
     def update(self, counter, screen, bg):
 
-        heat_rect = self.HEAT_BAR_IMAGE.get_rect(bottomleft=(200, 100))
+        heat_rect = self.HEAT_BAR_IMAGE.get_rect(bottomleft=(50, 250))
         # `heat` is the percentage of the surface's width and
         # is used to calculate the visible area of the image.
         self.heat = self.heat + counter / 3  # 5% of the image are already visible.
-        print(self.heat)
         screen.blit(
             self.HEAT_BAR_IMAGE,
             heat_rect,
@@ -175,6 +175,16 @@ class Bar:
             # Use the `heat` percentage to calculate the current width.
             (0, 0, heat_rect.w / 100 * self.heat, heat_rect.h)
         )
+        myfont = pygame.font.SysFont('Comic Sans MS', 30)
+        five_mins= myfont.render('5', False, (0, 0, 0))
+        ten_mins= myfont.render('10', False, (0, 0, 0))
+        fifteen_mins= myfont.render('15', False, (0, 0, 0))
+        twenty_mins= myfont.render('20', False, (0, 0, 0))
+        screen.blit(self.textsurface, (50, 270))
+        if self.heat>0.25:
+        if self.heat>0.5:
+        if self.heat>0.75:
+        if self.heat>1.0:
         pygame.display.flip()
 
     def resize(self,w,h):
@@ -196,7 +206,7 @@ def main():
     character = pygame.transform.rotate(character1, 1)
     screen = pygame.display.set_mode((900,300), pygame.RESIZABLE)
     bg = Background("./background.jpeg", 900,300)
-    bar = Bar()
+    bar = Bar(screen)
 
     try:
         counter = 1
