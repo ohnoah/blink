@@ -49,12 +49,6 @@ class BlinkDetector:
         return ear
 
     def blinkrate(self):
-
-        if(len(self.EAR) > 3):
-            print("NON-EMPTY EAR")
-            self.EAR = self.prevEAR
-        else:
-            print("EMPTY EAR")
         data = np.array(self.EAR)
         if data.size==0:
             print("datasize")
@@ -87,8 +81,8 @@ class BlinkDetector:
             self.prevTime = newTime
         else:
             self.timeElapsed = 0
-            if(len(self.EAR) > 3):
-                self.prevEAR = self.EAR
+            if(len(self.EAR) < 3):
+                self.EAR = self.prevEAR
             ##CLEARS EAR
             self.blinkR = self.blinkrate()
             print("HI BATCH TIME" + str(self.blinkR))
@@ -117,6 +111,8 @@ class BlinkDetector:
 
             # save datapoint
             self.EAR.append(ear)
+        if(len(self.EAR) > 3):
+            self.prevEAR = self.EAR
         returnVal = 0
         if(self.blinkR < 3):
             returnVal = -2
@@ -152,6 +148,9 @@ class Background:
 
 class Bar:
     def __init__(self, screen):
+        #HARCODED
+        #HARDCODED
+        
         self.HEAT_BAR_IMAGE = pygame.Surface((600, 20))
         self.color = pygame.Color(240, 240, 240)
         self.heat = 0.0
@@ -205,11 +204,10 @@ def main():
     bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 10)
     not_done = True
     pygame.init()
-    print("DO WE GET HERE")
     character1 = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
     character = pygame.transform.rotate(character1, 1)
-    screen = pygame.display.set_mode((900,300), pygame.RESIZABLE)
-    bg = Background("./background.jpeg", 900,300)
+    screen = pygame.display.set_mode((1024,512), pygame.RESIZABLE)
+    bg = Background("./copy.jpeg", 1024,512)
     bar = Bar(screen)
 
     try:
@@ -219,7 +217,6 @@ def main():
             blinkR = bd.processFrame()
             if((counter % 15) == 0):
                 charY = bg.height/2 + (bg.height/10)*blinkR
-                print(blinkR)
                 if(charY > bg.height - charheight/2):
                     charY = bg.height - charheight/2
                 elif(charY < charheight/2):
