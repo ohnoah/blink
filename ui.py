@@ -148,6 +148,40 @@ class Background:
         self.height = h
         self.background = pygame.transform.scale(self.background, (w,h))
 
+class Bar:
+    def __init__(self):
+        self.HEAT_BAR_IMAGE = pygame.Surface((200, 20))
+        self.color = pygame.Color(0, 255, 0)
+        self.heat = 0.0
+        for x in range(self.HEAT_BAR_IMAGE.get_width()):
+            for y in range(self.HEAT_BAR_IMAGE.get_height()):
+                self.HEAT_BAR_IMAGE.set_at((x, y), self.color)
+            if self.color.r < 254:
+                self.color.r += 2
+            if self.color.g > 1:
+                self.color.g -= 2
+
+    def update(self, counter, screen, bg):
+
+        heat_rect = self.HEAT_BAR_IMAGE.get_rect(bottomleft=(200, 100))
+        # `heat` is the percentage of the surface's width and
+        # is used to calculate the visible area of the image.
+        self.heat = self.heat + counter / 3  # 5% of the image are already visible.
+        print(self.heat)
+        screen.blit(
+            self.HEAT_BAR_IMAGE,
+            heat_rect,
+            # Pass a rect or tuple as the `area` argument.
+            # Use the `heat` percentage to calculate the current width.
+            (0, 0, heat_rect.w / 100 * self.heat, heat_rect.h)
+        )
+        pygame.display.flip()
+
+    def resize(self,w,h):
+        self.width = w
+        self.height = h
+        self.background = pygame.transform.scale(self.HEAT_BAR_IMAGE, (w,h))
+
 charwidth = 100
 charheight = 50
 averageBlinkR = 0
@@ -162,7 +196,8 @@ def main():
     character = pygame.transform.rotate(character1, 1)
     screen = pygame.display.set_mode((900,300), pygame.RESIZABLE)
     bg = Background("./background.jpeg", 900,300)
-    
+    bar = Bar()
+
     try:
         counter = 1
         charY = bg.height/2
@@ -192,6 +227,7 @@ def main():
 
             (x,y) = ((bg.width-charwidth)/2,charY - charheight/2)
             screen.blit(character,(x,y))
+            bar.update(counter, screen, bg)
             #done drawing so sleep
             counter += 1
             pygame.time.wait(33)
