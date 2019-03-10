@@ -118,13 +118,13 @@ class BlinkDetector:
             # save datapoint
             self.EAR.append(ear)
         returnVal = 0
-        if(self.blinkR < 3):
+        if(self.blinkR < 6):
             returnVal = -2
-        elif(3 <= self.blinkR <= 6 ):
+        elif(6 <= self.blinkR <= 12 ):
             returnVal = -1
-        elif(7 < self.blinkR <= 11 ):
+        elif(12 < self.blinkR <= 18 ):
             returnVal = 0
-        elif(11 < self.blinkR <= 15 ):
+        elif(18 < self.blinkR <= 24 ):
             returnVal = 1
         else:
             returnVal = 2
@@ -226,12 +226,6 @@ def main():
         while not_done:
             blinkR = bd.processFrame()
             if((counter % 15) == 0):
-                charY = bg.height/2 + (bg.height/10)*blinkR
-                print(blinkR)
-                if(charY > bg.height - charheight/2):
-                    charY = bg.height - charheight/2
-                elif(charY < charheight/2):
-                    charY = charheight/2                    
                 counter = 0
             # Update exhaust and ship position
             if prevTimeElapsed > bd.timeElapsed:
@@ -240,6 +234,7 @@ def main():
             charY += transitionstep
             if (transitionstep < 0 and charY < ytargets[blinkR + 2] * bg.height) or (transitionstep > 0 and charY > ytargets[blinkR + 2] * bg.height):
                 transitionstep = 0
+                
             prevTimeElapsed = bd.timeElapsed
             pygame.display.update()
             arr = pygame.event.get()
@@ -256,7 +251,7 @@ def main():
             (x,y) = ((bg.width-charwidth)/4 * 3,charY - charheight/2)
             screen.blit(character,(x,y))
             for cloud in clouds:
-                cloud.x -= bg.width * 0.0002
+                cloud.x -= bg.width * 0.0001
                 screen.blit(cloud.image, (cloud.x, cloud.y))
             bar.update(counter, screen, bg)
             #done drawing so sleep
