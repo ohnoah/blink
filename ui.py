@@ -140,6 +140,7 @@ class Background:
             self.xpos = self.width
         screen.blit(self.background, (self.xpos,0))
         screen.blit(self.background, (self.xpos-self.width,0))
+        screen.blit(pygame.transform.scale(pygame.image.load("./realspikes.png"), (self.width, 30)), (0,0))
         self.xpos -= self.width*0.001
     def resize(self,w,h):
         self.xpos *= w/self.width
