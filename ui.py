@@ -249,7 +249,6 @@ class Score:
             return self.change
 
     def flash(self, screen, bg):
-        print(self.flash_count)
         if (self.flash_count%4)<2:
             self.flash_count = self.flash_count - 1
         elif self.flash_count>0:
