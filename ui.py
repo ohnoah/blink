@@ -15,6 +15,7 @@ import time
 import dlib
 import cv2
 from scipy.spatial import distance as dist
+import math
 
 class BlinkDetector:
     def __init__(self, shape_predictor_file, batch_interval):
@@ -29,6 +30,7 @@ class BlinkDetector:
         self.timeElapsed = 0
         self.prevTime = -1
         self.blinkR = 0
+        self.vs = VideoStream(src=0).start()
 
     def eye_aspect_ratio(self, eye):
         # compute the euclidean distances between the two sets of
@@ -47,11 +49,18 @@ class BlinkDetector:
         return ear
 
     def blinkrate(self):
+
         if(len(self.EAR) > 3):
             print("NON-EMPTY EAR")
             self.EAR = self.prevEAR
         else:
             print("EMPTY EAR")
+        data = np.array(self.EAR)
+        for i in range(0, data.size, math.ceil(data.size*0.05)):
+            lim = math.ceil(data.size*0.05)
+            if lim + i > data.size:
+                lim = data.size - i
+            data[i:i+lim] -= np.mean(data[i:i+lim])
         model = hmm.GaussianHMM(n_components=2)
         model.fit(np.array(self.EAR).reshape(-1,1))
         states = model.predict(np.array(self.EAR).reshape(-1,1))
@@ -67,7 +76,7 @@ class BlinkDetector:
         print("THIS IS THE COUNT" + str(count))
         return count
 
-    def processFrame(self, vs):
+    def processFrame(self):
         if self.prevTime == -1:
             self.prevTime = time.time()
         elif self.timeElapsed < self.batchInterval:
@@ -83,7 +92,7 @@ class BlinkDetector:
             print("HI BATCH TIME" + str(self.blinkR))
             self.prevTime = time.time()
 
-        frame = vs.read()
+        frame = self.vs.read()
         frame = imutils.resize(frame, width=450)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         rects = self.detector(gray, 0)
@@ -158,7 +167,7 @@ def main():
         counter = 1
         charY = bg.height/2
         while not_done:
-            blinkR = bd.processFrame(vs)
+            blinkR = bd.processFrame()
             if((counter % 15) == 0):
                 charY = bg.height/2 + (bg.height/10)*blinkR
                 print(blinkR)
