@@ -13,10 +13,12 @@ import imutils
 import time
 import dlib
 import cv2
+from scipy.spatial import distance as dist
 
 class BlinkDetector:
     def __init__(self, shape_predictor_file, batch_interval):
-        self.vs = VideoStream(src=0).start()
+        self.vs = VideoStream(src=0)
+        self.vs.start()
         self.EAR = []
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor(shape_predictor_file)
@@ -25,7 +27,7 @@ class BlinkDetector:
         self.batchInterval = batch_interval
         self.timeElapsed = 0
         self.prevTime = -1
-        self.blinkR = -1
+        self.blinkR = 0
 
     def eye_aspect_ratio(self, eye):
         # compute the euclidean distances between the two sets of
@@ -49,19 +51,18 @@ class BlinkDetector:
         states = model.predict(np.array(self.EAR).reshape(-1,1))
         count = 0
         prevstate = 1
-        for i in range(0,len(states)):
+        for i in range(len(states)):
             if states[i] == 0 and prevstate == 1:
-                starts.append(i)
                 count += 1
                 prevstate = 0
             elif states[i] == 1 and prevstate == 0:
                 prevstate = 1
-            elif states[i] == 1 and prevstate == 0:
-                ends.append(i)
+                
         self.EAR.clear()
+        print("THIS IS THE COUNT" + str(count))
         return count
 
-    def processFrame(self):
+    def processFrame(self, vs):
         if self.prevTime == -1:
             self.prevTime = time.time()
         elif self.timeElapsed < self.batchInterval:
@@ -71,6 +72,7 @@ class BlinkDetector:
         else:
             self.timeElapsed = 0
             self.blinkR = self.blinkrate()
+            print("HI BATCH TIME" + str(self.blinkR))
             self.prevTime = time.time()
 
         frame = vs.read()
@@ -108,7 +110,6 @@ class Background:
     def updateBackground(self, screen):
         if self.xpos < 0:
             self.xpos = self.width
-        
         screen.blit(self.background, (self.xpos,0))
         screen.blit(self.background, (self.xpos-self.width,0))
         self.xpos -= self.width*0.001
@@ -123,20 +124,24 @@ charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-    bd = BlinkDetector("File_To_Shape_Detector")
+    bd = BlinkDetector("./shape_predictor_68_face_landmarks.dat", 5)
+    time.sleep(1)
     not_done = True
     pygame.init()
-    screen = pygame.display.set_mode((900,300), pygame.RESIZABLE)
-    bg = Background("background.jpeg", 900,300)
-    character1 = pygame.transform.scale(pygame.image.load("rocket.png"), (charwidth,charheight))
+    print("DO WE GET HERE")
+    character1 = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
     character = pygame.transform.rotate(character1, 1)
+    screen = pygame.display.set_mode((900,300), pygame.RESIZABLE)
+    bg = Background("./background.jpeg", 900,300)
+    
     
     try:
         counter = 1
         charY = bg.height/2
         while not_done:
-            blinkR = bd.processFrame()
-            if((counter % 10) == 0):
+            blinkR = bd.processFrame(bd.vs)
+            print(blinkR)
+            if((counter % 15) == 0):
                 print("updating y")
                 charY = bg.height/2 + (bg.height/2)*blinkR
                 if((abs(charY - bg.height) < charheight/2)):
@@ -166,6 +171,7 @@ def main():
         not_done = False
     print("HELLO")
     pygame.quit()
+    time.sleep(3)
     os._exit(0)
     
 main()
