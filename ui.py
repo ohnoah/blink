@@ -52,6 +52,7 @@ class BlinkDetector:
         data = np.array(self.EAR)
         if data.size==0:
             print("datasize")
+            return 0
         for i in range(0, data.size, math.ceil(data.size*0.05)):
             lim = math.ceil(data.size*0.05)
             if lim + i > data.size:
