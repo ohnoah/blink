@@ -15,11 +15,13 @@ import time
 import dlib
 import cv2
 from scipy.spatial import distance as dist
+import math
 
 class BlinkDetector:
     def __init__(self, shape_predictor_file, batch_interval):
         self.fileStream = True
         self.EAR = []
+        self.prevEAR = []
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor(shape_predictor_file)
         (self.lStart, self.lEnd) = face_utils.FACIAL_LANDMARKS_IDXS["left_eye"]
@@ -47,9 +49,15 @@ class BlinkDetector:
         return ear
 
     def blinkrate(self):
+
+        if(len(self.EAR) > 3):
+            print("NON-EMPTY EAR")
+            self.EAR = self.prevEAR
+        else:
+            print("EMPTY EAR")
         data = np.array(self.EAR)
-        for i in range(0, data.size, int(data.size/20)):
-            lim = int(data.size/20)
+        for i in range(0, data.size, math.ceil(data.size*0.05)):
+            lim = math.ceil(data.size*0.05)
             if lim + i > data.size:
                 lim = data.size - i
             data[i:i+lim] -= np.mean(data[i:i+lim])
@@ -77,6 +85,9 @@ class BlinkDetector:
             self.prevTime = newTime
         else:
             self.timeElapsed = 0
+            if(len(self.EAR) > 3):
+                self.prevEAR = self.EAR
+            ##CLEARS EAR
             self.blinkR = self.blinkrate()
             print("HI BATCH TIME" + str(self.blinkR))
             self.prevTime = time.time()
@@ -104,7 +115,19 @@ class BlinkDetector:
 
             # save datapoint
             self.EAR.append(ear)
-        return self.blinkR
+        returnVal = 0
+        if(self.blinkR < 3):
+            returnVal = -2
+        elif(3 <= self.blinkR <= 6 ):
+            returnVal = -1
+        elif(7 < self.blinkR <= 11 ):
+            returnVal = 0
+        elif(11 < self.blinkR <= 15 ):
+            returnVal = 1
+        else:
+            returnVal = 2
+            
+        return returnVal
  
 class Background:
     def __init__(self, imageFilePath, width, height):
@@ -125,6 +148,12 @@ class Background:
         self.height = h
         self.background = pygame.transform.scale(self.background, (w,h))
 
+class Exhaust:
+    def __init__(self, imageFilePath, width, height, xpos, ypos):
+        self.image = pygame.transform.scale(pygame.image.load(imageFilePath),(width,height))
+        self.x = xpos
+        self.y = ypos
+
 charwidth = 100
 charheight = 50
 averageBlinkR = 0
@@ -134,30 +163,34 @@ def main():
     not_done = True
     pygame.init()
     print("DO WE GET HERE")
-    baseCharacterImage = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
-    characterSprite = pygame.sprite.Sprite()
-    characterSprite.image = baseCharacterImage
-    characterSprite.rect = characterSprite.image.get_rect()
+    character = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
     screen = pygame.display.set_mode((900,300), pygame.RESIZABLE)
     bg = Background("./background.jpeg", 900,300)
-        
+    clouds = []
+    ytargets = [0.2, 0.35, 0.5, 0.65, 0.8]
+    transitionstep = 0
     try:
-        rotation = 0
         counter = 1
         charY = bg.height/2
+        prevTimeElapsed = 0
         while not_done:
             blinkR = bd.processFrame()
-            if((counter % 10) == 0):
-                charY = bg.height/2 + (bg.height/2)*blinkR
-                print("update " + str(charY))
-                if((abs(charY - bg.height) < charheight/2)):
+            if((counter % 15) == 0):
+                charY = bg.height/2 + (bg.height/10)*blinkR
+                print(blinkR)
+                if(charY > bg.height - charheight/2):
                     charY = bg.height - charheight/2
-                elif(charY < bg.height/2):
-                    charY < bg.height/2
-                    
+                elif(charY < charheight/2):
+                    charY = charheight/2                    
                 counter = 0
-            if rotation > 360:
-               rotation = 0
+            # Update exhaust and ship position
+            if prevTimeElapsed > bd.timeElapsed:
+                clouds.append(Exhaust("exhaust.png", 30, 15, (bg.width-charwidth)/4 * 3, charY - charheight/2 + 15))
+                transitionstep = ((ytargets[blinkR + 2] * bg.height) - charY) / 100
+            charY += transitionstep
+            if (transitionstep < 0 and charY < ytargets[blinkR + 2] * bg.height) or (transitionstep > 0 and charY > ytargets[blinkR + 2] * bg.height):
+                transitionstep = 0
+            prevTimeElapsed = bd.timeElapsed
             pygame.display.update()
             arr = pygame.event.get()
             #deals with closing and resizing
@@ -170,11 +203,12 @@ def main():
                     screen = pygame.display.set_mode((event.w,event.h), pygame.RESIZABLE)
                     bg.resize(event.w, event.h)
             bg.updateBackground(screen)
-            characterSprite.image = pygame.transform.rotate(baseCharacterImage, rotation)
-            characterSprite.rect = characterSprite.image.get_rect()
-            screen.blit(characterSprite.image,((bg.width-characterSprite.rect.centerx)/2,charY - characterSprite.rect.centery/2))
+            (x,y) = ((bg.width-charwidth)/4 * 3,charY - charheight/2)
+            screen.blit(character,(x,y))
+            for cloud in clouds:
+                cloud.x -= bg.width * 0.0002
+                screen.blit(cloud.image, (cloud.x, cloud.y))
             #done drawing so sleep
-            rotation += 1
             counter += 1
             pygame.time.wait(33)
     except Exception as e: 
