@@ -18,13 +18,9 @@ from scipy.spatial import distance as dist
 
 class BlinkDetector:
     def __init__(self, shape_predictor_file, batch_interval):
-<<<<<<< HEAD
-        self.vs = VideoStream(src=0)
-        self.vs.start()
-=======
         self.fileStream = True
->>>>>>> 9b13f7486348083a791c87bd3f5f8cf51fe9faf8
         self.EAR = []
+        self.prevEAR = []
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor(shape_predictor_file)
         (self.lStart, self.lEnd) = face_utils.FACIAL_LANDMARKS_IDXS["left_eye"]
@@ -51,7 +47,11 @@ class BlinkDetector:
         return ear
 
     def blinkrate(self):
-        print(self.EAR)
+        if(len(self.EAR) > 3):
+            print("NON-EMPTY EAR")
+            self.EAR = self.prevEAR
+        else:
+            print("EMPTY EAR")
         model = hmm.GaussianHMM(n_components=2)
         model.fit(np.array(self.EAR).reshape(-1,1))
         states = model.predict(np.array(self.EAR).reshape(-1,1))
@@ -59,20 +59,10 @@ class BlinkDetector:
         prevstate = 1
         for i in range(len(states)):
             if states[i] == 0 and prevstate == 1:
-<<<<<<< HEAD
-=======
-                # starts.append(i)
->>>>>>> 9b13f7486348083a791c87bd3f5f8cf51fe9faf8
                 count += 1
                 prevstate = 0
             elif states[i] == 1 and prevstate == 0:
                 prevstate = 1
-<<<<<<< HEAD
-                
-=======
-            # elif states[i] == 1 and prevstate == 0:
-            #     ends.append(i)
->>>>>>> 9b13f7486348083a791c87bd3f5f8cf51fe9faf8
         self.EAR.clear()
         print("THIS IS THE COUNT" + str(count))
         return count
@@ -86,6 +76,9 @@ class BlinkDetector:
             self.prevTime = newTime
         else:
             self.timeElapsed = 0
+            if(len(self.EAR) > 3):
+                self.prevEAR = self.EAR
+            ##CLEARS EAR
             self.blinkR = self.blinkrate()
             print("HI BATCH TIME" + str(self.blinkR))
             self.prevTime = time.time()
@@ -113,7 +106,19 @@ class BlinkDetector:
 
             # save datapoint
             self.EAR.append(ear)
-        return self.blinkR
+        returnVal = 0
+        if(self.blinkR < 3):
+            returnVal = -2
+        elif(3 <= self.blinkR <= 6 ):
+            returnVal = -1
+        elif(7 < self.blinkR <= 11 ):
+            returnVal = 0
+        elif(11 < self.blinkR <= 15 ):
+            returnVal = 1
+        else:
+            returnVal = 2
+            
+        return returnVal
  
 class Background:
     def __init__(self, imageFilePath, width, height):
@@ -139,13 +144,8 @@ charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-<<<<<<< HEAD
-    bd = BlinkDetector("./shape_predictor_68_face_landmarks.dat", 5)
-    time.sleep(1)
-=======
     vs = VideoStream(src=0).start()
-    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 5)
->>>>>>> 9b13f7486348083a791c87bd3f5f8cf51fe9faf8
+    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 10)
     not_done = True
     pygame.init()
     print("DO WE GET HERE")
@@ -154,26 +154,18 @@ def main():
     screen = pygame.display.set_mode((900,300), pygame.RESIZABLE)
     bg = Background("./background.jpeg", 900,300)
     
-    
     try:
         counter = 1
         charY = bg.height/2
         while not_done:
-<<<<<<< HEAD
-            blinkR = bd.processFrame(bd.vs)
-            print(blinkR)
-            if((counter % 15) == 0):
-                print("updating y")
-=======
             blinkR = bd.processFrame(vs)
-            if((counter % 10) == 0):
->>>>>>> 9b13f7486348083a791c87bd3f5f8cf51fe9faf8
-                charY = bg.height/2 + (bg.height/2)*blinkR
-                print("update " + str(charY))
-                if((abs(charY - bg.height) < charheight/2)):
+            if((counter % 15) == 0):
+                charY = bg.height/2 + (bg.height/10)*blinkR
+                print(blinkR)
+                if(charY > bg.height - charheight/2):
                     charY = bg.height - charheight/2
-                elif(charY < bg.height/2):
-                    charY < bg.height/2
+                elif(charY < charheight/2):
+                    charY = charheight/2
                     
                 counter = 0
             pygame.display.update()
@@ -188,7 +180,9 @@ def main():
                     screen = pygame.display.set_mode((event.w,event.h), pygame.RESIZABLE)
                     bg.resize(event.w, event.h)
             bg.updateBackground(screen)
-            screen.blit(character,((bg.width-charwidth)/2,charY + charheight/2))
+
+            (x,y) = ((bg.width-charwidth)/2,charY - charheight/2)
+            screen.blit(character,(x,y))
             #done drawing so sleep
             counter += 1
             pygame.time.wait(33)
