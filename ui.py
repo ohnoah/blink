@@ -207,7 +207,7 @@ class Score:
         pygame.font.init()
         self.score = 0
         self.s_w = s_w
-        self s_h = s_h
+        self.s_h = s_h
 
     def displayScore(self, screen):
         myfont = pygame.font.SysFont('Score:' + str(self.score), 45)
