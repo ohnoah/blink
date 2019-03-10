@@ -18,12 +18,7 @@ from scipy.spatial import distance as dist
 
 class BlinkDetector:
     def __init__(self, shape_predictor_file, batch_interval):
-<<<<<<< HEAD
-        self.vs = VideoStream(src=0)
-        self.vs.start()
-=======
         self.fileStream = True
->>>>>>> 9b13f7486348083a791c87bd3f5f8cf51fe9faf8
         self.EAR = []
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor(shape_predictor_file)
@@ -33,6 +28,7 @@ class BlinkDetector:
         self.timeElapsed = 0
         self.prevTime = -1
         self.blinkR = 0
+        self.vs = VideoStream(src=0).start()
 
     def eye_aspect_ratio(self, eye):
         # compute the euclidean distances between the two sets of
@@ -51,7 +47,12 @@ class BlinkDetector:
         return ear
 
     def blinkrate(self):
-        print(self.EAR)
+        data = np.array(self.EAR)
+        for i in range(0, data.size, int(data.size/20)):
+            lim = int(data.size/20)
+            if lim + i > data.size:
+                lim = data.size - i
+            data[i:i+lim] -= np.mean(data[i:i+lim])
         model = hmm.GaussianHMM(n_components=2)
         model.fit(np.array(self.EAR).reshape(-1,1))
         states = model.predict(np.array(self.EAR).reshape(-1,1))
@@ -59,25 +60,15 @@ class BlinkDetector:
         prevstate = 1
         for i in range(len(states)):
             if states[i] == 0 and prevstate == 1:
-<<<<<<< HEAD
-=======
-                # starts.append(i)
->>>>>>> 9b13f7486348083a791c87bd3f5f8cf51fe9faf8
                 count += 1
                 prevstate = 0
             elif states[i] == 1 and prevstate == 0:
                 prevstate = 1
-<<<<<<< HEAD
-                
-=======
-            # elif states[i] == 1 and prevstate == 0:
-            #     ends.append(i)
->>>>>>> 9b13f7486348083a791c87bd3f5f8cf51fe9faf8
         self.EAR.clear()
         print("THIS IS THE COUNT" + str(count))
         return count
 
-    def processFrame(self, vs):
+    def processFrame(self):
         if self.prevTime == -1:
             self.prevTime = time.time()
         elif self.timeElapsed < self.batchInterval:
@@ -90,7 +81,7 @@ class BlinkDetector:
             print("HI BATCH TIME" + str(self.blinkR))
             self.prevTime = time.time()
 
-        frame = vs.read()
+        frame = self.vs.read()
         frame = imutils.resize(frame, width=450)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         rects = self.detector(gray, 0)
@@ -139,13 +130,7 @@ charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-<<<<<<< HEAD
-    bd = BlinkDetector("./shape_predictor_68_face_landmarks.dat", 5)
-    time.sleep(1)
-=======
-    vs = VideoStream(src=0).start()
     bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 5)
->>>>>>> 9b13f7486348083a791c87bd3f5f8cf51fe9faf8
     not_done = True
     pygame.init()
     print("DO WE GET HERE")
@@ -159,15 +144,8 @@ def main():
         counter = 1
         charY = bg.height/2
         while not_done:
-<<<<<<< HEAD
-            blinkR = bd.processFrame(bd.vs)
-            print(blinkR)
-            if((counter % 15) == 0):
-                print("updating y")
-=======
-            blinkR = bd.processFrame(vs)
+            blinkR = bd.processFrame()
             if((counter % 10) == 0):
->>>>>>> 9b13f7486348083a791c87bd3f5f8cf51fe9faf8
                 charY = bg.height/2 + (bg.height/2)*blinkR
                 print("update " + str(charY))
                 if((abs(charY - bg.height) < charheight/2)):
