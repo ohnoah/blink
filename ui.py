@@ -212,9 +212,10 @@ class Score:
         self.s_h = s_h
         self.count = 0
         self.change = 0
+        self.flash_count=0
 
     def displayScore(self, screen):
-        if self.count==0:
+        if self.count==0 or self.change==0:
             myfont = pygame.font.SysFont('Score:' + str(self.score), 45)
             score_surface = myfont.render('Score: ' + str(self.score), False, (240, 240, 240))
             screen.blit(score_surface, (self.s_w, self.s_h))
@@ -232,23 +233,44 @@ class Score:
     def updateScore(self, screen, val):
         self.change = self.valtoScore(val)
         self.score = self.score + self.change
-        self.count = 5
+        self.count = 20
+        self.flash_count = 20
 
     def valtoScore(self, val):
-        if val==-2 | val==2:
+        if val==-2 or val==2:
             return -5
-        if val==-1 | val==-1:
+        if val==-1 or val==-1:
             return -1
         elif val==0:
             return 5
+        else:
+            return self.change
 
+    def flash(self, screen, bg):
+        print(self.flash_count)
+        if (self.flash_count%4)<2:
+            self.flash_count = self.flash_count - 1
+        elif self.flash_count>0:
+            print("Display!!")
+            s = pygame.Surface((bg.width, bg.height))  # the size of your rect
+            s.set_alpha(128)  # alpha level
+            if self.change == -5:
+                s.fill((255, 0, 0))
+            if self.change == -1:
+                s.fill((240, 150, 150))
+            if self.change == 5:
+                s.fill((44, 200, 100))
+            screen.blit(s, (0, 0))
+            self.flash_count = self.flash_count - 1
+        else:
+            pass
 
 charwidth = 100
 charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 10)
+    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 30)
     not_done = True
     pygame.init()
     character1 = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
@@ -299,6 +321,7 @@ def main():
                 screen.blit(cloud.image, (cloud.x, cloud.y))
             bar.update(counter, screen, bg)
             score.displayScore(screen)
+            score.flash(screen, bg)
             #done drawing so sleep
             counter += 1
             pygame.time.wait(33)
