@@ -247,7 +247,7 @@ charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 5)
+    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 10)
     not_done = True
     pygame.init()
     character1 = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
