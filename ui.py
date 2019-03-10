@@ -182,9 +182,13 @@ class Bar:
         twenty_mins= myfont.render('20', False, (0, 0, 0))
         screen.blit(self.textsurface, (50, 270))
         if self.heat>0.25:
+            screen.blit(five_mins, (heat_rect.w/100 * 0.25, 270))
         if self.heat>0.5:
+            screen.blit(ten_mins, (heat_rect.w/100 * 0.50, 270))
         if self.heat>0.75:
+            screen.blit(fifteen_mins, (heat_rect.w/100 * 0.75, 270))
         if self.heat>1.0:
+            screen.blit(twenty_mins, (heat_rect.w/100, 270))
         pygame.display.flip()
 
     def resize(self,w,h):
