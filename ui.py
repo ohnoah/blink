@@ -166,14 +166,14 @@ class Bar:
                 self.HEAT_BAR_IMAGE.set_at((x, y), self.color)
         pygame.font.init()
         myfont = pygame.font.SysFont('Comic Sans MS', 30)
-        self.textsurface = myfont.render('0', False, (0, 0, 0))
+        self.textsurface = myfont.render('0', False, (240, 240, 240))
 
     def update(self, counter, screen, bg):
-
-        heat_rect = self.HEAT_BAR_IMAGE.get_rect(bottomleft=(50, 250))
+        left_bar = 100
+        heat_rect = self.HEAT_BAR_IMAGE.get_rect(bottomleft=(left_bar, 250))
         # `heat` is the percentage of the surface's width and
         # is used to calculate the visible area of the image.
-        self.heat = self.heat + counter / 3  # 5% of the image are already visible.
+        self.heat = self.heat + counter / 30  # 5% of the image are already visible.
         screen.blit(
             self.HEAT_BAR_IMAGE,
             heat_rect,
@@ -182,19 +182,19 @@ class Bar:
             (0, 0, heat_rect.w / 100 * self.heat, heat_rect.h)
         )
         myfont = pygame.font.SysFont('Comic Sans MS', 30)
-        five_mins= myfont.render('5', False, (0, 0, 0))
-        ten_mins= myfont.render('10', False, (0, 0, 0))
-        fifteen_mins= myfont.render('15', False, (0, 0, 0))
-        twenty_mins= myfont.render('20', False, (0, 0, 0))
-        screen.blit(self.textsurface, (50, 270))
-        if self.heat>0.25:
-            screen.blit(five_mins, (heat_rect.w/100 * 0.25, 270))
-        if self.heat>0.5:
-            screen.blit(ten_mins, (heat_rect.w/100 * 0.50, 270))
-        if self.heat>0.75:
-            screen.blit(fifteen_mins, (heat_rect.w/100 * 0.75, 270))
-        if self.heat>1.0:
-            screen.blit(twenty_mins, (heat_rect.w/100, 270))
+        five_mins= myfont.render('5 mins', False, (240, 240, 240))
+        ten_mins= myfont.render('10 mins', False, (240, 240, 240))
+        fifteen_mins= myfont.render('15 mins', False, (240, 240, 240))
+        twenty_mins= myfont.render('20 mins', False, (240, 240, 240))
+        screen.blit(self.textsurface, (left_bar, 270))
+        if self.heat>25:
+            screen.blit(five_mins, (left_bar + heat_rect.w/100 * 25, 270))
+        if self.heat>50:
+            screen.blit(ten_mins, (left_bar + heat_rect.w/100 * 50, 270))
+        if self.heat>75:
+            screen.blit(fifteen_mins, (left_bar + heat_rect.w/100 * 75, 270))
+        if self.heat>100:
+            screen.blit(twenty_mins, (left_bar + heat_rect.w, 270))
         pygame.display.flip()
 
     def resize(self,w,h):
@@ -202,6 +202,40 @@ class Bar:
         self.height = h
         self.background = pygame.transform.scale(self.HEAT_BAR_IMAGE, (w,h))
 
+class Score:
+    def __init__(self, s_w, s_h):
+        pygame.font.init()
+        self.score = 0
+        self.s_w = s_w
+        self s_h = s_h
+
+    def displayScore(self, screen):
+        myfont = pygame.font.SysFont('Score:' + str(self.score), 45)
+        score_surface = myfont.render('0', False, (240, 240, 240))
+        screen.blitz(score_surface, (self.s_w, self.s_h))
+
+    def updateScore(self, screen, val):
+        change = self.valtoScore(val)
+        self.score = self.score + change
+        myfont = pygame.font.SysFont(str(change), 45)
+        if change==-5:
+            score_surface = myfont.render(str(change), False, (255, 0, 0))
+        if change==-1:
+            score_surface = myfont.render(str(change), False, (240, 150, 150))
+        if change==5:
+            score_surface = myfont.render(str(change), False, (44, 200, 100))
+        screen.blitz(score_surface, (self.s_w, self.s_h))
+
+    def valtoScore(self, val):
+        if val==-2 | val==2:
+            return -5
+        if val==-1 | val==-1:
+            return -1
+        else:
+            return 5
+
+score_position_w = 700
+score_position_h = 200
 charwidth = 100
 charheight = 50
 averageBlinkR = 0
