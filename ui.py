@@ -130,17 +130,19 @@ charheight = 50
 averageBlinkR = 0
 def main():
     # Initialise video stream
-    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 5)
+    bd = BlinkDetector("shape_predictor_68_face_landmarks.dat", 60)
     not_done = True
     pygame.init()
     print("DO WE GET HERE")
-    character1 = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
-    character = pygame.transform.rotate(character1, 1)
+    baseCharacterImage = pygame.transform.scale(pygame.image.load("./rocket.png"), (charwidth,charheight))
+    characterSprite = pygame.sprite.Sprite()
+    characterSprite.image = baseCharacterImage
+    characterSprite.rect = characterSprite.image.get_rect()
     screen = pygame.display.set_mode((900,300), pygame.RESIZABLE)
     bg = Background("./background.jpeg", 900,300)
-    
-    
+        
     try:
+        rotation = 0
         counter = 1
         charY = bg.height/2
         while not_done:
@@ -154,6 +156,8 @@ def main():
                     charY < bg.height/2
                     
                 counter = 0
+            if rotation > 360:
+               rotation = 0
             pygame.display.update()
             arr = pygame.event.get()
             #deals with closing and resizing
@@ -166,8 +170,11 @@ def main():
                     screen = pygame.display.set_mode((event.w,event.h), pygame.RESIZABLE)
                     bg.resize(event.w, event.h)
             bg.updateBackground(screen)
-            screen.blit(character,((bg.width-charwidth)/2,charY + charheight/2))
+            characterSprite.image = pygame.transform.rotate(baseCharacterImage, rotation)
+            characterSprite.rect = characterSprite.image.get_rect()
+            screen.blit(characterSprite.image,((bg.width-characterSprite.rect.centerx)/2,charY - characterSprite.rect.centery/2))
             #done drawing so sleep
+            rotation += 1
             counter += 1
             pygame.time.wait(33)
     except Exception as e: 
