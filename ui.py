@@ -56,6 +56,8 @@ class BlinkDetector:
         else:
             print("EMPTY EAR")
         data = np.array(self.EAR)
+        if data.size==0:
+            print("datasize")
         for i in range(0, data.size, math.ceil(data.size*0.05)):
             lim = math.ceil(data.size*0.05)
             if lim + i > data.size:
@@ -154,6 +156,52 @@ class Exhaust:
         self.x = xpos
         self.y = ypos
 
+class Bar:
+    def __init__(self, screen):
+        self.HEAT_BAR_IMAGE = pygame.Surface((600, 20))
+        self.color = pygame.Color(240, 240, 240)
+        self.heat = 0.0
+        for x in range(self.HEAT_BAR_IMAGE.get_width()):
+            for y in range(self.HEAT_BAR_IMAGE.get_height()):
+                self.HEAT_BAR_IMAGE.set_at((x, y), self.color)
+        pygame.font.init()
+        myfont = pygame.font.SysFont('Comic Sans MS', 30)
+        self.textsurface = myfont.render('0', False, (0, 0, 0))
+
+    def update(self, counter, screen, bg):
+
+        heat_rect = self.HEAT_BAR_IMAGE.get_rect(bottomleft=(50, 250))
+        # `heat` is the percentage of the surface's width and
+        # is used to calculate the visible area of the image.
+        self.heat = self.heat + counter / 3  # 5% of the image are already visible.
+        screen.blit(
+            self.HEAT_BAR_IMAGE,
+            heat_rect,
+            # Pass a rect or tuple as the `area` argument.
+            # Use the `heat` percentage to calculate the current width.
+            (0, 0, heat_rect.w / 100 * self.heat, heat_rect.h)
+        )
+        myfont = pygame.font.SysFont('Comic Sans MS', 30)
+        five_mins= myfont.render('5', False, (0, 0, 0))
+        ten_mins= myfont.render('10', False, (0, 0, 0))
+        fifteen_mins= myfont.render('15', False, (0, 0, 0))
+        twenty_mins= myfont.render('20', False, (0, 0, 0))
+        screen.blit(self.textsurface, (50, 270))
+        if self.heat>0.25:
+            screen.blit(five_mins, (heat_rect.w/100 * 0.25, 270))
+        if self.heat>0.5:
+            screen.blit(ten_mins, (heat_rect.w/100 * 0.50, 270))
+        if self.heat>0.75:
+            screen.blit(fifteen_mins, (heat_rect.w/100 * 0.75, 270))
+        if self.heat>1.0:
+            screen.blit(twenty_mins, (heat_rect.w/100, 270))
+        pygame.display.flip()
+
+    def resize(self,w,h):
+        self.width = w
+        self.height = h
+        self.background = pygame.transform.scale(self.HEAT_BAR_IMAGE, (w,h))
+
 charwidth = 100
 charheight = 50
 averageBlinkR = 0
@@ -169,6 +217,8 @@ def main():
     clouds = []
     ytargets = [0.2, 0.35, 0.5, 0.65, 0.8]
     transitionstep = 0
+    bar = Bar(screen)
+
     try:
         counter = 1
         charY = bg.height/2
@@ -208,6 +258,7 @@ def main():
             for cloud in clouds:
                 cloud.x -= bg.width * 0.0002
                 screen.blit(cloud.image, (cloud.x, cloud.y))
+            bar.update(counter, screen, bg)
             #done drawing so sleep
             counter += 1
             pygame.time.wait(33)
@@ -218,5 +269,5 @@ def main():
     pygame.quit()
     time.sleep(3)
     os._exit(0)
-    
+
 main()
